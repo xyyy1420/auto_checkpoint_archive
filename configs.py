@@ -1,15 +1,17 @@
 from os.path import  realpath
 import os
+import random
 
 default_config={
-        "logs":"./logs",
-        "buffer":"./test_buffer",
-        "archive_info":"archive_info",
+        "logs":"logs",
+        "buffer":"test_buffer",
         "archive_folder":"archive",
         "elf_suffix":"_base.riscv64-linux-gnu-gcc12.2.0",
+        "bin_suffix":"-bbl-linux-spec.bin",
         "cpu2006_run_dir":"/nfs/home/share/xs-workloads/spec/spec-all/cpu2006_run_dir",
         "riscv-rootfs":"/nfs/home/jiaxiaoyu/simpoint/riscv-rootfs/rootfsimg",
-        "pk":"/nfs/home/jiaxiaoyu/simpoint/riscv-pk"
+        "pk":"/nfs/home/jiaxiaoyu/simpoint/riscv-pk",
+        "nemu_home":"/nfs/home/jiaxiaoyu/tmp/NEMU"
     }
 
 def def_config():
@@ -17,15 +19,46 @@ def def_config():
 
 def prepare_config():
     return {
-        "prepare_log":os.path.join(def_config()["logs"],"prepare"),
+        "prepare_log":os.path.join(def_config()["buffer"],def_config()["logs"],"prepare"),
         "elf_folder":os.path.join(def_config()["buffer"],"elf"),
     }
 
 def build_config():
     return {
-        "build_log":os.path.join(def_config()["logs"],"build"),
-        "bin_folder":os.path.join(def_config()["buffer"],"bin"),
+        "build_log":os.path.join(def_config()["buffer"],def_config()["logs"],"build"),
+        "bin_folder":os.path.join(def_config()["buffer"],"bin")
     }
+
+default_simpoint_config={
+    "nemu":os.path.join(def_config()["nemu_home"],"build","riscv64-nemu-interpreter"),
+    "bbl_folder":os.path.join(build_config()["bin_folder"]),
+    "profiling_folder":"profiling",
+    "cluster_folder":"cluster",
+    "checkpoint_folder":"checkpoint",
+    "gcpt_restore":os.path.join(def_config()["nemu_home"],"resource","gcpt_restore","build","gcpt.bin"),
+    "simpoint":os.path.join(def_config()["nemu_home"],"resource","simpoint","simpoint_repo","bin","simpoint"),
+    "profiling_logs":os.path.join(def_config()["buffer"],def_config()["logs"],"profiling"),
+    "cluster_logs":os.path.join(def_config()["buffer"],def_config()["logs"],"cluster"),
+    "checkpoint_logs":os.path.join(def_config()["buffer"],def_config()["logs"],"checkpoint"),
+    "interval":"20000000",
+}
+
+def simpoint_config():
+    return default_simpoint_config
+
+def profiling_command(workload,profiling_folder):
+    command=[simpoint_config()["nemu"],"{}/{}{}".format(simpoint_config()["bbl_folder"],workload,def_config()["bin_suffix"]),"-D",def_config()["buffer"],"-w",workload,"-C",profiling_folder,"-b","--simpoint-profile","--cpt-interval",simpoint_config()["interval"],"-r",simpoint_config()["gcpt_restore"]]
+    return command
+
+def cluster_command(workload,profiling_folder,cluster_folder):
+    seedkm=random.randint(100000,999999)
+    seedproj=random.randint(100000,999999)
+    command=[simpoint_config()["simpoint"],"-loadFVFile",os.path.join(def_config()["buffer"],profiling_folder,workload,"simpoint_bbv.gz"),"-saveSimpoints",os.path.join(def_config()["buffer"],cluster_folder,"simpoints0"),"-saveSimpointWeights",os.path.join(def_config()["buffer"],simpoint_config()["cluster_folder"],"weights0"),"-inputVectorsGzipped","-maxK","30","-numInitSeeds","2","-iters","1000","-seedkm",seedkm,"-seedproj",seedproj]
+    return command
+
+def checkpoint_command(workload,cluster_folder,checkpoint_folder):
+    command=[simpoint_config()["nemu"],"{}/{}{}".format(simpoint_config()["bbl_folder"],workload,def_config()["bin_suffix"]),"-D",def_config()["buffer"],"-w",workload,"-C",checkpoint_folder,"-b","-S",cluster_folder,"--cpt-interval",simpoint_config()["interval"],"-r",simpoint_config()["gcpt_restore"]]
+    return command
 
 default_initramfs_file = [
   "dir /bin 755 0 0",
@@ -72,7 +105,7 @@ default_initramfs_file = [
   "file /spec/run.sh ${RISCV_ROOTFS_HOME}/rootfsimg/run.sh 755 0 0"
 ]
 
-def get_spec_program_list():
+def get_spec_elf_list():
     return [
         "astar",
         "bwaves",

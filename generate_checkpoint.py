@@ -7,10 +7,13 @@ from threading import Thread
 from datetime import datetime
 from utils import generate_initramfs, generate_run_sh, mkdir,file_entrys, app_list
 from configs import build_config, get_default_spec_list, get_spec_elf_list,def_config, prepare_config,get_default_spec_list,default_config
+from simpoint import simpoint
+
+def generate_archive_info(md5,message):
+    with open(os.path.join(def_config()["archive_folder"],"archive_info"),"a") as f:
+        f.write(f"{md5}: {message}\n")
 
 def init():
-    for value in def_config().values():
-        mkdir(value)
     for value in build_config().values():
         mkdir(value)
     for value in prepare_config().values():
@@ -93,14 +96,20 @@ if __name__ == "__main__":
     if args.archive_folder != None:
         default_config["archive_folder"]=args.archive_folder
 
-    result_folder_hash=hash(datetime.now().strftime("%Y-%m-%d-%H-%M"))
-    default_config["buffer"]=os.path.join(default_config["archive_folder"],str(result_folder_hash))
+    if args.message == None:
+        print("Without message might could not find profiling result")
+        args.message="No message"
+
+    result_folder_md5=hashlib.md5(datetime.now().strftime("%Y-%m-%d-%H-%M").encode("utf-8")).hexdigest()
+    default_config["buffer"]=os.path.join(default_config["archive_folder"],str(result_folder_md5))
 
     init()
-#bin_folder="/nfs/home/jiaxiaoyu/tmp/spec2006-lite/rvc-off-target/build"
-    prepare_elf_buffer(args.bins,def_config()["elf_suffix"])
-#    for spec in get_default_spec_list():
+    generate_archive_info(result_folder_md5,args.message)
+
+    prepare_elf_buffer(args.elfs,def_config()["elf_suffix"])
+
     for spec in app_list(args.spec_app_list):
         prepare_rootfs(spec,args.checkpoints)
         build_spec_bbl(spec,def_config()["bin_suffix"])
+        simpoint(1,1,1,"hmmer_nph3")
 
