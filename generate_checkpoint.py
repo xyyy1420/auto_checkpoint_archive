@@ -19,14 +19,6 @@ def init():
     for value in prepare_config().values():
         mkdir(value)
 
-def generate_buffer_info(copy_list):
-    lines=[]
-    for item in copy_list:
-        lines.append("{} {} {}\n".format(item[0]," -> ",item[1]))
-
-    with open(os.path.join(def_config()["logs"],"copy_info.log"),"w") as f:
-        f.writelines(lines)
-
 def gen_copy_list_item(src_name,src_path,append_elf_suffix=def_config()["elf_suffix"]):
     target_path=""
     for program in get_spec_elf_list():
@@ -51,9 +43,6 @@ def prepare_elf_buffer(source_elf_path,append_elf_suffix):
     for thread in copy_threads:
         thread.join()
 
-    generate_buffer_info(prepare_copy_list)
-
-
 def build_spec_bbl(spec,bin_suffix):
 
     print(f"build {spec}-bbl-linux-spec...")
@@ -72,7 +61,6 @@ def prepare_rootfs(spec,withTrap=True):
     generate_initramfs([spec],def_config()["elf_suffix"],def_config()["riscv-rootfs"])
     generate_run_sh([spec],def_config()["elf_suffix"],def_config()["riscv-rootfs"],withTrap)
 
-    # using file record directory and message ,using for details with profiling and checkpoint
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Using for auto profiling and checkpoint")
@@ -83,6 +71,13 @@ if __name__ == "__main__":
     parser.add_argument('--print-spec-app-list',action="store_true",help="Print defaul spec program list)")
     parser.add_argument('--message',help="Message flags result,just like git commit message")
     parser.add_argument('--checkpoints',action='store_true',help="Checkpoints mode (with before_workload and trap)")
+    parser.add_argument('--profiling-times',help="Profiing times (default: 1; if set 0,you must set archive id and profiling id)")
+    parser.add_argument('--cluster-times',help="Per profiling cluster times (default: 1; if set 0, you must set archive id and cluster id)")
+    parser.add_argument('--checkpoint-times',help="Per cluster checkpoint times (default: 1)")
+    parser.add_argument('--profiling-id',help="Profiing start id (default: 0)")
+    parser.add_argument('--cluster-id',help="Cluster start id (default: 0)")
+    parser.add_argument('--checkpoint-id',help="Checkpoint times (default: 0)")
+    parser.add_argument('--archive-id',help="Archive id (default: auto generate)")
 
     args=parser.parse_args()
 
@@ -90,26 +85,65 @@ if __name__ == "__main__":
         print(get_default_spec_list())
         exit(0)
 
+    # set user profiling, cluster, checkpoint times
+    if args.profiling_times!=None:
+        default_config["profiling_times"]=int(args.profiling_times)
+    if args.cluster_times!=None:
+        default_config["cluster_times"]=int(args.cluster_times)
+    if args.checkpoint_times!=None:
+        default_config["checkpoint_times"]=int(args.checkpoint_times)
+
+    # TODO: fix this pending bug, just make checkpoint times >= cluster times ? or ensure cluster is exist
+    if def_config()["profiling_times"]<=def_config()["cluster_times"] and def_config()["cluster_times"]<=def_config()["checkpoint_times"]:
+        pass
+    else:
+        print("You must ensure profiling times <= cluster times <= checkpoint times")
+        exit(1)
+
+    if def_config()["profiling_times"]==0 and (args.archive_id==None or args.profiling_id==None):
+        print("When set profiling times 0, you must set archive id and profiling id")
+        exit(1)
+    else:
+        default_config["profiling_id"]=args.profiling_id
+
+    if def_config()["cluster_times"]==0 and (args.archive_id==None or args.cluster_id==None):
+        print("When set cluster times 0, you must set archive id and cluster id")
+        exit(1)
+    else:
+        default_config["cluster_id"]=args.cluster_id
+
+    # user set elf suffix
     if args.elf_suffix != None:
         default_config["elf_suffix"]=args.elf_suffix
 
+    # user set archive folder
     if args.archive_folder != None:
         default_config["archive_folder"]=args.archive_folder
 
+    # record user message
     if args.message == None:
         print("Without message might could not find profiling result")
         args.message="No message"
 
+    # calculate result md5
     result_folder_md5=hashlib.md5(datetime.now().strftime("%Y-%m-%d-%H-%M").encode("utf-8")).hexdigest()
+
+    if args.archive_id!=None:
+        result_folder_md5=args.archive_id
+
     default_config["buffer"]=os.path.join(default_config["archive_folder"],str(result_folder_md5))
+    assert(os.path.exists(def_config()["buffer"]))
 
     init()
     generate_archive_info(result_folder_md5,args.message)
 
-    prepare_elf_buffer(args.elfs,def_config()["elf_suffix"])
+    if args.archive_id==None:
+        prepare_elf_buffer(args.elfs,def_config()["elf_suffix"])
 
     for spec in app_list(args.spec_app_list):
-        prepare_rootfs(spec,args.checkpoints)
-        build_spec_bbl(spec,def_config()["bin_suffix"])
-        simpoint(1,1,1,"hmmer_nph3")
+        if args.archive_id==None:
+            prepare_rootfs(spec,args.checkpoints)
+            build_spec_bbl(spec,def_config()["bin_suffix"])
+
+        simpoint(def_config()["profiling_times"],def_config()["cluster_times"],def_config()["checkpoint_times"],spec)
 

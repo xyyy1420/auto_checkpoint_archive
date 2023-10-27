@@ -6,12 +6,22 @@ default_config={
         "logs":"logs",
         "buffer":"test_buffer",
         "archive_folder":"archive",
+
         "elf_suffix":"_base.riscv64-linux-gnu-gcc12.2.0",
         "bin_suffix":"-bbl-linux-spec.bin",
+
         "cpu2006_run_dir":"/nfs/home/share/xs-workloads/spec/spec-all/cpu2006_run_dir",
         "riscv-rootfs":"/nfs/home/jiaxiaoyu/simpoint/riscv-rootfs/rootfsimg",
         "pk":"/nfs/home/jiaxiaoyu/simpoint/riscv-pk",
-        "nemu_home":"/nfs/home/jiaxiaoyu/tmp/NEMU"
+        "nemu_home":"/nfs/home/jiaxiaoyu/tmp/NEMU",
+
+        "profiling_times":1,
+        "cluster_times":1,
+        "checkpoint_times":1,
+
+        "profiling_id":0,
+        "cluster_id":0,
+        "checkpoint_id":0
     }
 
 def def_config():
@@ -30,21 +40,31 @@ def build_config():
     }
 
 default_simpoint_config={
-    "nemu":os.path.join(def_config()["nemu_home"],"build","riscv64-nemu-interpreter"),
-    "bbl_folder":os.path.join(build_config()["bin_folder"]),
-    "profiling_folder":"profiling",
-    "cluster_folder":"cluster",
-    "checkpoint_folder":"checkpoint",
-    "gcpt_restore":os.path.join(def_config()["nemu_home"],"resource","gcpt_restore","build","gcpt.bin"),
-    "simpoint":os.path.join(def_config()["nemu_home"],"resource","simpoint","simpoint_repo","bin","simpoint"),
-    "profiling_logs":os.path.join(def_config()["buffer"],def_config()["logs"],"profiling"),
-    "cluster_logs":os.path.join(def_config()["buffer"],def_config()["logs"],"cluster"),
-    "checkpoint_logs":os.path.join(def_config()["buffer"],def_config()["logs"],"checkpoint"),
-    "interval":"20000000",
+    "profiling_format":"profiling-{}",
+    "cluster_format":"cluster-{}-{}",
+    "checkpoint_format":"checkpoint-{}-{}-{}",
 }
 
+#default_simpoint_config=
 def simpoint_config():
-    return default_simpoint_config
+    return {
+        "nemu":os.path.join(def_config()["nemu_home"],"build","riscv64-nemu-interpreter"),
+        "gcpt_restore":os.path.join(def_config()["nemu_home"],"resource","gcpt_restore","build","gcpt.bin"),
+        "simpoint":os.path.join(def_config()["nemu_home"],"resource","simpoint","simpoint_repo","bin","simpoint"),
+        "bbl_folder":os.path.join(build_config()["bin_folder"]),
+
+        "profiling_folder":default_simpoint_config["profiling_format"],
+        "cluster_folder":default_simpoint_config["cluster_format"],
+        "checkpoint_folder":default_simpoint_config["checkpoint_format"],
+
+        "profiling_logs":os.path.join(def_config()["buffer"],def_config()["logs"],default_simpoint_config["profiling_format"]),
+        "cluster_logs":os.path.join(def_config()["buffer"],def_config()["logs"],default_simpoint_config["cluster_format"]),
+        "checkpoint_logs":os.path.join(def_config()["buffer"],def_config()["logs"],default_simpoint_config["checkpoint_format"]),
+
+        "interval":"20000000",
+    }
+
+#    return default_simpoint_config
 
 def profiling_command(workload,profiling_folder):
     command=[simpoint_config()["nemu"],"{}/{}{}".format(simpoint_config()["bbl_folder"],workload,def_config()["bin_suffix"]),"-D",def_config()["buffer"],"-w",workload,"-C",profiling_folder,"-b","--simpoint-profile","--cpt-interval",simpoint_config()["interval"],"-r",simpoint_config()["gcpt_restore"]]
@@ -53,7 +73,7 @@ def profiling_command(workload,profiling_folder):
 def cluster_command(workload,profiling_folder,cluster_folder):
     seedkm=random.randint(100000,999999)
     seedproj=random.randint(100000,999999)
-    command=[simpoint_config()["simpoint"],"-loadFVFile",os.path.join(def_config()["buffer"],profiling_folder,workload,"simpoint_bbv.gz"),"-saveSimpoints",os.path.join(def_config()["buffer"],cluster_folder,"simpoints0"),"-saveSimpointWeights",os.path.join(def_config()["buffer"],simpoint_config()["cluster_folder"],"weights0"),"-inputVectorsGzipped","-maxK","30","-numInitSeeds","2","-iters","1000","-seedkm",seedkm,"-seedproj",seedproj]
+    command=[simpoint_config()["simpoint"],"-loadFVFile",os.path.join(profiling_folder,workload,"simpoint_bbv.gz"),"-saveSimpoints",os.path.join(cluster_folder,"simpoints0"),"-saveSimpointWeights",os.path.join(cluster_folder,"weights0"),"-inputVectorsGzipped","-maxK","30","-numInitSeeds","2","-iters","1000","-seedkm",f"{seedkm}","-seedproj",f"{seedproj}"]
     return command
 
 def checkpoint_command(workload,cluster_folder,checkpoint_folder):
