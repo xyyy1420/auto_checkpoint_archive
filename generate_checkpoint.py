@@ -67,22 +67,23 @@ def run_simpoint(spec_app):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Using for auto profiling and checkpoint")
-    parser.add_argument('--elfs',help="Spec programs folder")
-    parser.add_argument('--archive-folder',help="Save all result (default: archive)")
-    parser.add_argument('--elf-suffix',help="Elf suffix (default: _base.riscv64-linux-gnu-gcc12.2.0)")
-    parser.add_argument('--spec-app-list',help="Selected spec programs (default: all spec program)")
-    parser.add_argument('--print-spec-app-list',action="store_true",help="Print defaul spec program list)")
-    parser.add_argument('--message',help="Message flags result,just like git commit message")
-    parser.add_argument('--checkpoints',action='store_true',help="Checkpoints mode (with before_workload and trap)")
+    parser = argparse.ArgumentParser(description="Auto profiling and checkpointing")
+    parser.add_argument('--elfs',help="Local spec programs folder (elf format)")
+    parser.add_argument('--archive-folder',help="Archive folder name (default: archive)")
+    parser.add_argument('--elf-suffix',help="Elf suffix in spec-bbl (default: _base.riscv64-linux-gnu-gcc12.2.0)")
+    parser.add_argument('--spec-app-list',help="List of selected spec programs (default: all spec program)")
+    parser.add_argument('--print-spec-app-list',action="store_true",help="Print default spec program list)")
+    parser.add_argument('--message',help="Record info to the archive")
+    parser.add_argument('--spec-bbl-checkpoint-mode',action='store_true',help="Generate spec bbl mode (set with before_workload,trap or not)")
     parser.add_argument('--profiling-times',help="Profiing times (default: 1; if set 0,you must set archive id and profiling id)")
     parser.add_argument('--cluster-times',help="Per profiling cluster times (default: 1; if set 0, you must set archive id and cluster id)")
-    parser.add_argument('--checkpoint-times',help="Per cluster checkpoint times (default: 1)")
-    parser.add_argument('--profiling-id',help="Profiing start id (default: 0)")
-    parser.add_argument('--cluster-id',help="Cluster start id (default: 0)")
-    parser.add_argument('--checkpoint-id',help="Checkpoint times (default: 0)")
-    parser.add_argument('--archive-id',help="Archive id (default: auto generate)")
+    parser.add_argument('--checkpoint-times',help="Per cluster checkpoint times (default: 1; donot support set 0)")
+    parser.add_argument('--profiling-id',help="Profiing start id (default: None)")
+    parser.add_argument('--cluster-id',help="Cluster start id (default: None)")
+    parser.add_argument('--checkpoint-id',help="Checkpoint id (default: None)")
+    parser.add_argument('--archive-id',help="Archive id (default: use the md5 of the current time)")
     parser.add_argument('--max-threads',help="Max threads, must less then cpu nums (default: 10)")
+    parser.add_argument('--build-bbl-only',action='store_true',help="Generate spec bbl only")
 
     args=parser.parse_args()
 
@@ -149,10 +150,12 @@ if __name__ == "__main__":
     #TODO: add multi thread support
     for spec in app_list(args.spec_app_list):
         if args.archive_id==None:
-            prepare_rootfs(spec,args.checkpoints)
+            prepare_rootfs(spec,args.spec_bbl_checkpoint_mode)
             build_spec_bbl(spec,def_config()["bin_suffix"])
         run_simpoint_args.append(spec)
 
+    if args.build_bbl_only:
+        exit(0)
 
     max_threads=10
     if args.max_threads!=None:
