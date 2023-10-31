@@ -4,10 +4,11 @@ import shutil
 import hashlib
 import subprocess
 from threading import Thread
+from multiprocessing import Pool
 from datetime import datetime
 from utils import generate_initramfs, generate_run_sh, mkdir,file_entrys, app_list
-from configs import build_config, get_default_spec_list, get_spec_elf_list,def_config, prepare_config,get_default_spec_list,default_config
-from simpoint import simpoint
+from configs import build_config, get_default_spec_list,get_spec_elf_list,def_config, prepare_config,get_default_spec_list,default_config,get_checkpoint_results
+from simpoint import per_checkpoint_generate_worklist, per_checkpoint_generate_json, simpoint
 
 def generate_archive_info(md5,message):
     with open(os.path.join(def_config()["archive_folder"],"archive_info"),"a") as f:
@@ -61,6 +62,9 @@ def prepare_rootfs(spec,withTrap=True):
     generate_initramfs([spec],def_config()["elf_suffix"],def_config()["riscv-rootfs"])
     generate_run_sh([spec],def_config()["elf_suffix"],def_config()["riscv-rootfs"],withTrap)
 
+def run_simpoint(spec_app):
+    simpoint(def_config()["profiling_times"],def_config()["cluster_times"],def_config()["checkpoint_times"],spec_app)
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Using for auto profiling and checkpoint")
@@ -78,6 +82,7 @@ if __name__ == "__main__":
     parser.add_argument('--cluster-id',help="Cluster start id (default: 0)")
     parser.add_argument('--checkpoint-id',help="Checkpoint times (default: 0)")
     parser.add_argument('--archive-id',help="Archive id (default: auto generate)")
+    parser.add_argument('--max-threads',help="Max threads, must less then cpu nums (default: 10)")
 
     args=parser.parse_args()
 
@@ -132,18 +137,39 @@ if __name__ == "__main__":
         result_folder_md5=args.archive_id
 
     default_config["buffer"]=os.path.join(default_config["archive_folder"],str(result_folder_md5))
-    assert(os.path.exists(def_config()["buffer"]))
 
     init()
+    assert(os.path.exists(def_config()["buffer"]))
     generate_archive_info(result_folder_md5,args.message)
 
     if args.archive_id==None:
         prepare_elf_buffer(args.elfs,def_config()["elf_suffix"])
 
+    run_simpoint_args=[]
+    #TODO: add multi thread support
     for spec in app_list(args.spec_app_list):
         if args.archive_id==None:
             prepare_rootfs(spec,args.checkpoints)
             build_spec_bbl(spec,def_config()["bin_suffix"])
+        run_simpoint_args.append(spec)
 
-        simpoint(def_config()["profiling_times"],def_config()["cluster_times"],def_config()["checkpoint_times"],spec)
+
+    max_threads=10
+    if args.max_threads!=None:
+        max_threads=args.max_threads
+
+    pool=Pool(processes=max_threads)
+    pool.map_async(run_simpoint,run_simpoint_args)
+    pool.close()
+    pool.join()
+
+    for result in get_checkpoint_results():
+        per_checkpoint_generate_json(result["profiling_log"],result["cl_res"],app_list(args.spec_app_list),result["json_path"])
+        per_checkpoint_generate_worklist(result["checkpoint_path"],result["list_path"])
+
+        print("{}: {}".format("checkpoint path",result["checkpoint_path"]))
+        print("{}: {}".format("json path",result["json_path"]))
+        print("{}: {}".format("list path",result["list_path"]))
+
+
 

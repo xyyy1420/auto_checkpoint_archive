@@ -1,6 +1,23 @@
+import multiprocessing
 from os.path import  realpath
 import os
 import random
+
+manager=multiprocessing.Manager()
+checkpoint_res=manager.list()
+checkpoint_lock=manager.Lock()
+
+def append_checkpoint_result(res):
+    checkpoint_lock.acquire()
+    if res not in checkpoint_res:
+        checkpoint_res.append(res)
+    checkpoint_lock.release()
+ 
+def get_checkpoint_results():
+    checkpoint_lock.acquire()
+    res=checkpoint_res
+    checkpoint_lock.release()
+    return res 
 
 default_config={
         "logs":"logs",
@@ -43,6 +60,8 @@ default_simpoint_config={
     "profiling_format":"profiling-{}",
     "cluster_format":"cluster-{}-{}",
     "checkpoint_format":"checkpoint-{}-{}-{}",
+    "json_format":"cluster-{}-{}.json",
+    "list_format":"checkpoint-{}-{}-{}.lst",
 }
 
 #default_simpoint_config=
@@ -56,6 +75,9 @@ def simpoint_config():
         "profiling_folder":default_simpoint_config["profiling_format"],
         "cluster_folder":default_simpoint_config["cluster_format"],
         "checkpoint_folder":default_simpoint_config["checkpoint_format"],
+
+        "json_file":default_simpoint_config["json_format"],
+        "list_file":default_simpoint_config["list_format"],
 
         "profiling_logs":os.path.join(def_config()["buffer"],def_config()["logs"],default_simpoint_config["profiling_format"]),
         "cluster_logs":os.path.join(def_config()["buffer"],def_config()["logs"],default_simpoint_config["cluster_format"]),
