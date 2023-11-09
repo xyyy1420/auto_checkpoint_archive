@@ -106,7 +106,7 @@ def generate_run_sh(specs, elf_suffix, dest_path, withTrap=False):
         lines.append("date -R")
         if withTrap:
             lines.append("/spec_common/before_workload")
-        lines.append(f"cd /spec && ./{spec_bin} {spec_cmd}")
+        lines.append(f"cd /spec && ./{spec_bin} {spec_cmd} > null")
         if withTrap:
             lines.append("/spec_common/trap")
         lines.append("date -R")

@@ -114,36 +114,41 @@ def checkpoint(workload, ptime, cltime, ctime):
 
 
 def simpoint(profiling_times, cluster_times, checkpoint_times, workload):
-    for ptime in range(0, profiling_times):
+    for ptime in range(def_config()["profiling_id"],def_config()["profiling_id"] + profiling_times):
         profiling(workload, ptime)
 
     #cluster
     if profiling_times != 0:
-        for ptime in range(0, profiling_times):
-            for cltime in range(0, cluster_times):
+        for ptime in range(def_config()["profiling_id"], def_config()["profiling_id"] + profiling_times):
+            for cltime in range(def_config()["cluster_id"],def_config()["cluster_id"] + cluster_times):
                 cluster(workload, ptime, cltime)
     else:
-        for cltime in range(0, cluster_times):
+        for cltime in range(def_config()["cluster_id"], cluster_times+def_config()["cluster_id"]):
             cluster(workload, def_config()["profiling_id"], cltime)
 
     #checkpoint
+    #profiling -> cluster -> checkpoint
     if cluster_times != 0 and profiling_times != 0:
-        for ptime in range(0, profiling_times):
-            for cltime in range(0, cluster_times):
-                for ctime in range(0, checkpoint_times):
+        for ptime in range(def_config()["profiling_id"],def_config()["profiling_id"] + profiling_times):
+            for cltime in range(def_config()["cluster_id"],def_config()["cluster_id"] + cluster_times):
+                for ctime in range(def_config()["checkpoint_id"],def_config()["checkpoint_id"] + checkpoint_times):
                     checkpoint(workload, ptime, cltime, ctime)
 
+    #profiling_res -> cluster -> checkpoint
     elif cluster_times != 0:
-        for cltime in range(0, cluster_times):
-            for ctime in range(0, checkpoint_times):
+        for cltime in range(def_config()["cluster_id"],def_config()["cluster_id"] + cluster_times):
+            for ctime in range(def_config()["checkpoint_id"],def_config()["checkpoint_id"] + checkpoint_times):
                 checkpoint(workload,
                            def_config()["profiling_id"], cltime, ctime)
-
-    else:
-        for ctime in range(0, checkpoint_times):
+    #profiling_res -> cluster_res -> checkpoint
+    elif cluster_times ==0 and profiling_times==0:
+        for ctime in range(def_config()["checkpoint_id"],def_config()["checkpoint_id"] + checkpoint_times):
             checkpoint(workload,
                        def_config()["profiling_id"],
                        def_config()["cluster_id"], ctime)
+    #profiling -> no_cluster -> checkpoint or not, donot support
+    else:
+        print("donot support with n profiling but 0 cluster")
 
 
 def profiling_instrs(profiling_log, spec_app):

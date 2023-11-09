@@ -131,17 +131,17 @@ if __name__ == "__main__":
     parser.add_argument(
         '--cluster-times',
         help=
-        "Per profiling cluster times (default: 1; if set 0, you must set archive id and cluster id)"
+        "Per profiling cluster times (default: 1; if set 0, you must ensure profiling times set 0 and must set archive id and cluster id)"
     )
     parser.add_argument(
         '--checkpoint-times',
         help="Per cluster checkpoint times (default: 1; donot support set 0)")
     parser.add_argument('--profiling-id',
-                        help="Profiing start id (default: None)")
+                        help="Profiing start id (default: 0)")
     parser.add_argument('--cluster-id',
-                        help="Cluster start id (default: None)")
+                        help="Cluster start id (default: 0)")
     parser.add_argument('--checkpoint-id',
-                        help="Checkpoint id (default: None)")
+                        help="Checkpoint id (default: 0)")
     parser.add_argument(
         '--archive-id',
         help="Archive id (default: use the md5 of the current time)")
@@ -167,15 +167,15 @@ if __name__ == "__main__":
         default_config["checkpoint_times"] = int(args.checkpoint_times)
 
     # TODO: fix this pending bug, just make checkpoint times >= cluster times ? or ensure cluster is exist
-    if def_config()["profiling_times"] <= def_config(
-    )["cluster_times"] and def_config()["cluster_times"] <= def_config(
-    )["checkpoint_times"]:
-        pass
-    else:
-        print(
-            "You must ensure profiling times <= cluster times <= checkpoint times"
-        )
-        exit(1)
+#    if def_config()["profiling_times"] <= def_config(
+#    )["cluster_times"] and def_config()["cluster_times"] <= def_config(
+#    )["checkpoint_times"]:
+#        pass
+#    else:
+#        print(
+#            "You must ensure profiling times <= cluster times <= checkpoint times"
+#        )
+#        exit(1)
 
     if def_config()["profiling_times"] == 0 and (args.archive_id == None
                                                  or args.profiling_id == None):
