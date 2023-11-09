@@ -123,25 +123,18 @@ if __name__ == "__main__":
         '--spec-bbl-checkpoint-mode',
         action='store_true',
         help="Generate spec bbl mode (set with before_workload,trap or not)")
+
     parser.add_argument(
-        '--profiling-times',
+        '--times',
         help=
-        "Profiing times (default: 1; if set 0,you must set archive id and profiling id)"
+        "Profiing cluster checkpoint times (default: 1,1,1;(format 1,1,1) if set it manual, you must set archive id and ensure profiling id, cluster id, checkpoint id is ok)"
     )
     parser.add_argument(
-        '--cluster-times',
+        '--start-id',
         help=
-        "Per profiling cluster times (default: 1; if set 0, you must ensure profiling times set 0 and must set archive id and cluster id)"
+        "Profiing cluster checkpoint start id (default: 0,0,0;(format 0,0,0) if set it manual, it will overwrite some result which is exists)"
     )
-    parser.add_argument(
-        '--checkpoint-times',
-        help="Per cluster checkpoint times (default: 1; donot support set 0)")
-    parser.add_argument('--profiling-id',
-                        help="Profiing start id (default: 0)")
-    parser.add_argument('--cluster-id',
-                        help="Cluster start id (default: 0)")
-    parser.add_argument('--checkpoint-id',
-                        help="Checkpoint id (default: 0)")
+
     parser.add_argument(
         '--archive-id',
         help="Archive id (default: use the md5 of the current time)")
@@ -159,40 +152,34 @@ if __name__ == "__main__":
         exit(0)
 
     # set user profiling, cluster, checkpoint times
-    if args.profiling_times != None:
-        default_config["profiling_times"] = int(args.profiling_times)
-    if args.cluster_times != None:
-        default_config["cluster_times"] = int(args.cluster_times)
-    if args.checkpoint_times != None:
-        default_config["checkpoint_times"] = int(args.checkpoint_times)
+    if args.times != None:
+        profiling_times,cluster_times,checkpoint_times=args.times.split(',')
+        default_config["profiling_times"] = int(profiling_times)
+        default_config["cluster_times"] = int(cluster_times)
+        default_config["checkpoint_times"] = int(checkpoint_times)
 
-    # TODO: fix this pending bug, just make checkpoint times >= cluster times ? or ensure cluster is exist
-#    if def_config()["profiling_times"] <= def_config(
-#    )["cluster_times"] and def_config()["cluster_times"] <= def_config(
-#    )["checkpoint_times"]:
-#        pass
-#    else:
+    if args.start_id != None:
+        profiling_id,cluster_id,checkpoint_id=args.times.split(',')
+        default_config["profiling_id"] = int(profiling_id)
+        default_config["cluster_id"] = int(cluster_id)
+        default_config["checkpoint_id"] = int(checkpoint_id)
+
+#    if def_config()["profiling_times"] == 0 and (args.archive_id == None
+#                                                 or args.profiling_id == None):
 #        print(
-#            "You must ensure profiling times <= cluster times <= checkpoint times"
+#            "When set profiling times 0, you must set archive id and profiling id"
 #        )
 #        exit(1)
-
-    if def_config()["profiling_times"] == 0 and (args.archive_id == None
-                                                 or args.profiling_id == None):
-        print(
-            "When set profiling times 0, you must set archive id and profiling id"
-        )
-        exit(1)
-    else:
-        default_config["profiling_id"] = args.profiling_id
-
-    if def_config()["cluster_times"] == 0 and (args.archive_id == None
-                                               or args.cluster_id == None):
-        print(
-            "When set cluster times 0, you must set archive id and cluster id")
-        exit(1)
-    else:
-        default_config["cluster_id"] = args.cluster_id
+#    else:
+#        default_config["profiling_id"] = args.profiling_id
+#
+#    if def_config()["cluster_times"] == 0 and (args.archive_id == None
+#                                               or args.cluster_id == None):
+#        print(
+#            "When set cluster times 0, you must set archive id and cluster id")
+#        exit(1)
+#    else:
+#        default_config["cluster_id"] = args.cluster_id
 
     # user set elf suffix
     if args.elf_suffix != None:
