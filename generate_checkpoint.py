@@ -17,6 +17,7 @@ def generate_archive_info(md5, message):
               "a") as f:
         f.write(f"{md5}: {message}\n")
 
+
 def init():
     for value in build_config().values():
         mkdir(value)
@@ -153,33 +154,23 @@ if __name__ == "__main__":
 
     # set user profiling, cluster, checkpoint times
     if args.times != None:
-        profiling_times,cluster_times,checkpoint_times=args.times.split(',')
+        profiling_times, cluster_times, checkpoint_times = args.times.split(
+            ',')
         default_config["profiling_times"] = int(profiling_times)
         default_config["cluster_times"] = int(cluster_times)
         default_config["checkpoint_times"] = int(checkpoint_times)
 
     if args.start_id != None:
-        profiling_id,cluster_id,checkpoint_id=args.times.split(',')
+        profiling_id, cluster_id, checkpoint_id = args.start_id.split(',')
         default_config["profiling_id"] = int(profiling_id)
         default_config["cluster_id"] = int(cluster_id)
         default_config["checkpoint_id"] = int(checkpoint_id)
 
-#    if def_config()["profiling_times"] == 0 and (args.archive_id == None
-#                                                 or args.profiling_id == None):
-#        print(
-#            "When set profiling times 0, you must set archive id and profiling id"
-#        )
-#        exit(1)
-#    else:
-#        default_config["profiling_id"] = args.profiling_id
-#
-#    if def_config()["cluster_times"] == 0 and (args.archive_id == None
-#                                               or args.cluster_id == None):
-#        print(
-#            "When set cluster times 0, you must set archive id and cluster id")
-#        exit(1)
-#    else:
-#        default_config["cluster_id"] = args.cluster_id
+    if (def_config()["profiling_times"] == 0 or def_config()["cluster_times"]
+            == 0 or def_config()["cluster_times"] == 0) and (args.archive_id
+                                                             == None):
+        print("When times has 0, you must set archive id")
+        exit(1)
 
     # user set elf suffix
     if args.elf_suffix != None:
@@ -244,7 +235,13 @@ if __name__ == "__main__":
         per_checkpoint_generate_worklist(result["checkpoint_path"],
                                          result["list_path"])
 
-        with open(os.path.join(result["checkpoint_path"],"result"),"w") as f:
-            print("{}: {}".format("checkpoint path", os.path.abspath(result["checkpoint_path"])),file=f)
-            print("{}: {}".format("json path", os.path.abspath(result["json_path"])),file=f)
-            print("{}: {}".format("list path", os.path.abspath(result["list_path"])),file=f)
+        with open(os.path.join(result["checkpoint_path"], "result"), "w") as f:
+            print("{}: {}".format("checkpoint path",
+                                  os.path.abspath(result["checkpoint_path"])),
+                  file=f)
+            print("{}: {}".format("json path",
+                                  os.path.abspath(result["json_path"])),
+                  file=f)
+            print("{}: {}".format("list path",
+                                  os.path.abspath(result["list_path"])),
+                  file=f)

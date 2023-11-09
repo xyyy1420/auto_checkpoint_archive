@@ -134,18 +134,19 @@ def simpoint(profiling_times, cluster_times, checkpoint_times, workload):
                 for ctime in range(def_config()["checkpoint_id"],def_config()["checkpoint_id"] + checkpoint_times):
                     checkpoint(workload, ptime, cltime, ctime)
 
-    #profiling_res -> cluster -> checkpoint
-    elif cluster_times != 0:
-        for cltime in range(def_config()["cluster_id"],def_config()["cluster_id"] + cluster_times):
-            for ctime in range(def_config()["checkpoint_id"],def_config()["checkpoint_id"] + checkpoint_times):
-                checkpoint(workload,
-                           def_config()["profiling_id"], cltime, ctime)
     #profiling_res -> cluster_res -> checkpoint
     elif cluster_times ==0 and profiling_times==0:
         for ctime in range(def_config()["checkpoint_id"],def_config()["checkpoint_id"] + checkpoint_times):
             checkpoint(workload,
                        def_config()["profiling_id"],
                        def_config()["cluster_id"], ctime)
+    #profiling_res -> cluster -> checkpoint
+    elif cluster_times != 0 and profiling_times==0:
+        for cltime in range(def_config()["cluster_id"],def_config()["cluster_id"] + cluster_times):
+            for ctime in range(def_config()["checkpoint_id"],def_config()["checkpoint_id"] + checkpoint_times):
+                checkpoint(workload,
+                           def_config()["profiling_id"], cltime, ctime)
+
     #profiling -> no_cluster -> checkpoint or not, donot support
     else:
         print("donot support with n profiling but 0 cluster")
