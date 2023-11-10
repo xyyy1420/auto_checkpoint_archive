@@ -169,7 +169,7 @@ if __name__ == "__main__":
     if (def_config()["profiling_times"] == 0 or def_config()["cluster_times"]
             == 0 or def_config()["cluster_times"] == 0) and (args.archive_id
                                                              == None):
-        print("When times has 0, you must set archive id")
+        print("Error: When times has 0, you must set archive id")
         exit(1)
 
     # user set elf suffix
@@ -182,7 +182,7 @@ if __name__ == "__main__":
 
     # record user message
     if args.message == None:
-        print("Without message might could not find profiling result")
+        print("Warning: Without message might could not find profiling result")
         args.message = "No message"
 
     # calculate result md5
@@ -245,3 +245,4 @@ if __name__ == "__main__":
             print("{}: {}".format("list path",
                                   os.path.abspath(result["list_path"])),
                   file=f)
+        print("Execute finish, check result in {}".format(os.path.join(result["checkpoint_path"], "result")))
