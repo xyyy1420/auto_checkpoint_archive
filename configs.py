@@ -190,10 +190,10 @@ default_initramfs_file = [
 def get_spec_elf_list():
     return [
         "astar", "bwaves", "bzip2", "cactusADM", "calculix", "dealII",
-        "gamess", "gcc", "GemsFDTD", "gobmk", "gromacs", "h264ref", "hmmer",
+        "gamess", "GemsFDTD", "gobmk", "gromacs", "h264ref", "hmmer",
         "lbm", "leslie3d", "libquantum", "mcf", "milc", "namd", "omnetpp",
         "perlbench", "povray", "sjeng", "soplex", "specrand", "sphinx3",
-        "tonto", "wrf", "xalancbmk", "zeusmp"
+        "tonto", "wrf", "xalancbmk", "zeusmp", "gcc"
     ]
 
 

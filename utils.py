@@ -104,9 +104,11 @@ def generate_run_sh(specs, elf_suffix, dest_path, withTrap=False):
         lines.append("set -x")
         lines.append(f"md5sum /spec/{spec_bin}")
         lines.append("date -R")
+        lines.append("ls /spec")
+        lines.append("cat /spec/inp.in")
         if withTrap:
             lines.append("/spec_common/before_workload")
-        lines.append(f"cd /spec && ./{spec_bin} {spec_cmd} > null")
+        lines.append(f"cd /spec && ./{spec_bin} {spec_cmd}")
         if withTrap:
             lines.append("/spec_common/trap")
         lines.append("date -R")
