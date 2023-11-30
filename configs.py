@@ -177,12 +177,11 @@ default_initramfs_file = [
     "file /etc/inittab ${RISCV_ROOTFS_HOME}/rootfsimg/inittab-spec 755 0 0",
     "slink /init /bin/busybox 755 0 0", "", "# SPEC common",
     "dir /spec_common 755 0 0",
-    "file /spec_common/before_workload ${SPEC}/before_workload 755 0 0",
-    "file /spec_common/trap ${SPEC}/trap_new 755 0 0", "", "# SPEC",
+    "file /spec_common/before_workload ${RISCV_ROOTFS_HOME}/rootfsimg/build/before_workload 755 0 0",
+    "file /spec_common/trap ${RISCV_ROOTFS_HOME}/rootfsimg/build/trap_new 755 0 0", "", "# SPEC",
     "dir /spec 755 0 0",
     "file /spec/run.sh ${RISCV_ROOTFS_HOME}/rootfsimg/run.sh 755 0 0"
 ]
-
 
 def get_spec_elf_list():
     return [
