@@ -24,15 +24,11 @@ def profiling(workload, ptime):
     mkdir(os.path.split(profiling_out)[0])
 
     print("Profiling, workload: {}, times: {}, output path: {}, err path: {}".format(workload,ptime,profiling_out,profiling_err))
-#    print(profiling_command(workload, pres_folder), profiling_out,
-#          profiling_err)
     with open(profiling_out, "w") as out, open(profiling_err, "w") as err:
         res = subprocess.run(profiling_command(workload, pres_folder),
                              stdout=out,
                              stderr=err)
-
-
-# if use normal "trap", check_returncode will return, else check_return will raise err
+# if use normal "trap", check_returncode will return, else check_return will raise err, we use qemu_trap, so comment this for now
 #        res.check_returncode()
 
 
@@ -53,8 +49,6 @@ def cluster(workload, ptime, cltime):
         "{}-err.log".format(workload))
 
     mkdir(os.path.split(cluster_out)[0])
-#    print(cluster_command(workload, pres_folder, cl_res_folder), cluster_out,
-#          cluster_err)
     print("Cluster, workload: {}, using profiling result: {}, cluster id: {}, output path: {}, err path: {}".format(workload,ptime,cltime,cluster_out,cluster_err))
 
     with open(cluster_out, "w") as out, open(cluster_err, "w") as err:
@@ -62,7 +56,6 @@ def cluster(workload, ptime, cltime):
                                              cl_res_folder),
                              stdout=out,
                              stderr=err)
-
 
 #        res.check_returncode()
 
@@ -86,8 +79,6 @@ def checkpoint(workload, ptime, cltime, ctime):
         "{}-err.log".format(workload))
 
     mkdir(os.path.split(checkpoint_out)[0])
-#    print(checkpoint_command(workload, cl_res_folder, cres_folder),
-#          checkpoint_out, checkpoint_err)
 
     print("Checkpointing, workload: {}, using profiling result: {}, using cluster result: {}, checkpoint id: {}, output path: {}, err path: {}".format(workload,ptime,cltime,ctime,checkpoint_out,checkpoint_err))
 

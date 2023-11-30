@@ -29,10 +29,10 @@ default_config = {
     "elf_suffix": "_base.riscv64-linux-gnu-gcc12.2.0",
     "bin_suffix": "-bbl-linux-spec.bin",
     "cpu2006_run_dir":
-    "/nfs/home/share/xs-workloads/spec/spec-all/cpu2006_run_dir",
-    "riscv-rootfs": "/nfs/home/jiaxiaoyu/simpoint/riscv-rootfs/rootfsimg",
-    "pk": "/nfs/home/jiaxiaoyu/simpoint/riscv-pk",
-    "nemu_home": "/nfs/home/jiaxiaoyu/tmp/NEMU",
+    "/path/to/cpu2006_run_dir",
+    "riscv-rootfs": "/path/to/rootfsimg",
+    "pk": "/path/to/riscv-pk",
+    "nemu_home": "/path/to/NEMU",
     "profiling_times": 1,
     "cluster_times": 1,
     "checkpoint_times": 1,
@@ -114,9 +114,6 @@ def simpoint_config():
         "interval":
         "20000000",
     }
-
-
-#    return default_simpoint_config
 
 
 def profiling_command(workload, profiling_folder):

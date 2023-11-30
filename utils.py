@@ -12,15 +12,6 @@ def mkdir(path):
     except:
         pass
 
-
-#    try:
-#        if not os.path.exists(path):
-#            os.makedirs(path)
-#    except Exception as e:
-#        e.add_note("mkdir error {}".format(path))
-#        raise
-
-
 def entrys(path):
     entrys_list = []
     with os.scandir(path) as el:

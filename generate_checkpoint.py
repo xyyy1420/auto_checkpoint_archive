@@ -97,10 +97,6 @@ def run_simpoint(spec_app):
 def err_check(err):
     print("Error happend", err)
 
-
-#def normal_check(value):
-#    print("execute",value)
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
@@ -218,7 +214,6 @@ if __name__ == "__main__":
 
 #    for arg in run_simpoint_args:
 #        pool.apply_async(run_simpoint,args=(arg,),callback=normal_check,error_callback=err_check)
-#        print("hello")
 
     pool = Pool(processes=max_threads)
     pool.map_async(run_simpoint, run_simpoint_args, error_callback=err_check)
