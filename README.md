@@ -83,6 +83,7 @@ python3 generate_checkpoint.py --elfs ./gcc_elfs --spec-app-list ./gcc.lst --mes
       - 运行后请在几分钟内查看log确认workload正常运行，在某些情况下会存在workload已经结束运行但是运行workload的进程并没有结束的情况（没有使用before_workload、trap或者运行过程中出错）
       - 如果输出提示build xxxxxxx此时请不要再次运行这个脚本，等待开始输出profiling命令后可以开始运行另外一个进程，原因是构建workload的过程无法同时进行。
       - 无论是否会运行出错，每个阶段的log都会保存在archive/archive_id/logs中
+      - 运行脚本后会在运行目录生成一个auto_checkpoint_env.sh文件，可以方便的在不同服务器间配置相同的环境变量
 - 最终结果示例
    - 运行过程中会输出一些log，按顺序依次是正在构建bin文件的提示，执行profiling、cluster、checkpoint的提示，最后是最终获得的结果（如下图）（新版不会输出这些path，而是提供一个result文件的path，其中包含了需要的路径）
    - ![image.png](https://cdn.nlark.com/yuque/0/2023/png/35441298/1698738798309-d468ccb0-a8a4-43a7-9a38-04255e7f1b8d.png#averageHue=%23322e29&clientId=u5a84fd58-4228-4&from=paste&height=53&id=uc8172663&originHeight=80&originWidth=990&originalType=binary&ratio=1.5&rotation=0&showTitle=false&size=16512&status=done&style=none&taskId=u6d72a0cf-96ff-4ad8-a177-452d7fabd62&title=&width=660)

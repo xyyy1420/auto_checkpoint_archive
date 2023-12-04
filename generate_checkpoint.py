@@ -97,7 +97,16 @@ def run_simpoint(spec_app):
 def err_check(err):
     print("Error happend", err)
 
+
+def gen_env_script():
+    env_dist=os.environ
+    keys=["RISCV","NOOP_HOME","NEMU_HOME","RISCV_ROOTFS_HOME"]
+    with open("auto_checkpoint_env.sh","w") as f:
+        for key in keys:
+            print("export {}={}".format(key,env_dist.get(key)),file=f)
+
 if __name__ == "__main__":
+    gen_env_script()
 
     parser = argparse.ArgumentParser(
         description="Auto profiling and checkpointing")
