@@ -4,7 +4,7 @@
 - 从香山项目中克隆下来 riscv-pk， riscv-linux， riscv-rootfs，NEMU分别是启动加载程序 Bootloader， Linux kernel ，根文件系统 rootfs和NEMU。请将四个仓库放到同一目录下
    - https://github.com/OpenXiangShan/riscv-pk noop 分支
    - https://github.com/OpenXiangShan/riscv-linux nanshan 分支
-   - https://github.com/OpenXiangShan/riscv-rootfs master 分支 （或[https://github.com/xyyy1420/riscv-rootfs](https://github.com/xyyy1420/riscv-rootfs.git) 的checkpoint分支）
+   - https://github.com/OpenXiangShan/riscv-rootfs checkpoint 分支
    - [https://github.com/OpenXiangShan/NEMU](https://github.com/OpenXiangShan/NEMU/tree/master) master 分支
 - 设置环境变量
    - NEMU_HOME：NEMU 的路径
@@ -72,7 +72,7 @@ optional arguments:
 ```
 
 - 调整config.py文件，
-   - 将riscv-rootfs，pk，nemu_home改为上文中环境准备过程中自己的riscv-rootfs 的路径，riscv-pk路径，nemu路径，其他内容不需要修改
+   - 将riscv-rootfs，pk，nemu_home改为上文中环境准备过程中自己的riscv-rootfs/rootfsimg的路径，riscv-pk路径，nemu路径，其他内容不需要修改
 - 一键checkpoint
 ```
 python3 generate_checkpoint.py --elfs ./gcc_elfs --spec-app-list ./gcc.lst --message "First gcc checkpoint" --spec-bbl-checkpoint-mode --max-threads 100
