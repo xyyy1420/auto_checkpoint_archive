@@ -178,7 +178,7 @@ default_initramfs_file = [
     "slink /init /bin/busybox 755 0 0", "", "# SPEC common",
     "dir /spec_common 755 0 0",
     "file /spec_common/before_workload ${RISCV_ROOTFS_HOME}/rootfsimg/build/before_workload 755 0 0",
-    "file /spec_common/trap ${RISCV_ROOTFS_HOME}/rootfsimg/build/trap_new 755 0 0", "", "# SPEC",
+    "file /spec_common/trap ${RISCV_ROOTFS_HOME}/rootfsimg/build/trap 755 0 0", "", "# SPEC",
     "dir /spec 755 0 0",
     "file /spec/run.sh ${RISCV_ROOTFS_HOME}/rootfsimg/run.sh 755 0 0"
 ]
