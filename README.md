@@ -91,16 +91,17 @@ python3 generate_checkpoint.py --elfs ./gcc_elfs --spec-app-list ./gcc.lst --mes
    - ![image.png](https://cdn.nlark.com/yuque/0/2023/png/35441298/1698740669236-0a10fa9e-d5c5-4226-8fb5-05f86db6f7d6.png#averageHue=%232a2724&clientId=u5a84fd58-4228-4&from=paste&height=35&id=u8ed3ddab&originHeight=53&originWidth=710&originalType=binary&ratio=1.5&rotation=0&showTitle=false&size=6659&status=done&style=none&taskId=uec660434-a6cc-4782-a7db-6440afb0c2b&title=&width=473.3333333333333)
 - **TODO**：
    - ⚡通过设置一个flag文件阻止多个进程在构建过程中同时运行
-   - 运行过程出错之后再次运行应该接着未完成的任务继续
+   - 运行过程出错之后再次运行应该接着未完成的任务继续❌
    - 支持删除出错流程中生成的文件
    - 支持通过命令行读入各种配置文件（按照一定格式）
-   - 支持通过命令行读入workload list，或者某些可选的list标志，而不是一定需要一个lst文件
+   - 支持通过命令行读入workload list，或者某些可选的list标志，而不是一定需要一个lst文件✔️
    - ⚡支持将结果转为绝对路径输出到某处 ✔️
-   - 删除生成的simpoint_bbv文件夹（不是脚本生成的，可能是nemu或者cluster，还没详细看）
+   - 删除生成的simpoint_bbv文件夹（不是脚本生成的，可能是nemu或者cluster，还没详细看）✔️
    - 生成path文件，以适配xy的脚本
    - ⚡支持在cluster阶段和checkpoint阶段的并行化（主要是解决线程数量的合理分配）
    - ⚡增加版本号以区分新增的功能点
    - ⚡运行出错后下一次运行会继承运行出错时的archive-id，需要看看是啥原因
    - ⚡彻底修正SPEC程序名称匹配到gcc的问题
+   - ⚡使用随机单词替换md5✔️
 
-⚡表示高优先级，✔️表示已完成
+⚡表示高优先级，✔️表示已完成，❌表示不需要继续修复

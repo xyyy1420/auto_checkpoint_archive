@@ -121,7 +121,10 @@ if __name__ == "__main__":
         "Elf suffix in spec-bbl (default: _base.riscv64-linux-gnu-gcc12.2.0)")
     parser.add_argument(
         '--spec-app-list',
-        help="List of selected spec programs (default: all spec program)")
+        help="List of selected spec programs path (default: all spec program)")
+    parser.add_argument(
+        '--spec-apps',
+        help='List of selected spec programs (default: null; format: "astar_biglakes,astar_rivers" )')
     parser.add_argument('--print-spec-app-list',
                         action="store_true",
                         help="Print default spec program list)")
@@ -209,7 +212,7 @@ if __name__ == "__main__":
         prepare_elf_buffer(args.elfs, def_config()["elf_suffix"])
 
     run_simpoint_args = []
-    for spec in app_list(args.spec_app_list):
+    for spec in app_list(args.spec_app_list,args.spec_apps):
         if args.archive_id == None:
             prepare_rootfs(spec, args.spec_bbl_checkpoint_mode)
             build_spec_bbl(spec, def_config()["bin_suffix"])
@@ -235,7 +238,7 @@ if __name__ == "__main__":
 
     for result in get_checkpoint_results():
         per_checkpoint_generate_json(result["profiling_log"], result["cl_res"],
-                                     app_list(args.spec_app_list),
+                                     app_list(args.spec_app_list,args.spec_apps),
                                      result["json_path"])
         per_checkpoint_generate_worklist(result["checkpoint_path"],
                                          result["list_path"])

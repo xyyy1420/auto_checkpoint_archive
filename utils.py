@@ -113,10 +113,15 @@ def generate_run_sh(specs, elf_suffix, dest_path, withTrap=False):
         f.writelines(map(lambda x: x + "\n", lines))
 
 
-def app_list(list_path):
-    if list_path == None:
+def app_list(list_path,app_list):
+    if list_path == None and app_list == None:
         return get_default_spec_list()
-    app_list = []
-    with open(list_path) as l:
-        app_list = l.read().splitlines()
-    return app_list
+    elif list_path == None and app_list != None:
+        apps=app_list.split(',')
+        return list(set(apps))
+    else:
+        app_list = []
+        with open(list_path) as l:
+            app_list = l.read().splitlines()
+        return list(set(app_list))
+
