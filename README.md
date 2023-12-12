@@ -100,7 +100,7 @@ python3 generate_checkpoint.py --elfs ./gcc_elfs --spec-app-list ./gcc.lst --mes
    - 生成path文件，以适配xy的脚本
    - ⚡支持在cluster阶段和checkpoint阶段的并行化（主要是解决线程数量的合理分配）
    - ⚡增加版本号以区分新增的功能点
-   - ⚡运行出错后下一次运行会继承运行出错时的archive-id，需要看看是啥原因
+   - ⚡运行出错后下一次运行会继承运行出错时的archive-id，需要看看是啥原因✔️
    - ⚡彻底修正SPEC程序名称匹配到gcc的问题
    - ⚡使用随机单词替换md5✔️
 
