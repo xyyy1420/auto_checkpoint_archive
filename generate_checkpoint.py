@@ -6,6 +6,7 @@ import subprocess
 import time
 from threading import Thread
 from multiprocessing import Pool
+from random_word import RandomWords
 from datetime import datetime
 from utils import generate_initramfs, generate_run_sh, mkdir, file_entrys, app_list
 from configs import build_config, get_default_spec_list, get_spec_elf_list, def_config, prepare_config, get_default_spec_list, default_config, get_checkpoint_results
@@ -190,19 +191,19 @@ if __name__ == "__main__":
         print("Warning: Without message might could not find profiling result")
         args.message = "No message"
 
-    # calculate result md5
-    result_folder_md5 = hashlib.md5(
-        datetime.now().strftime("%Y-%m-%d-%H-%M").encode("utf-8")).hexdigest()
+    # calculate result archive id
+    rw=RandomWords()
+    result_folder_id="{}-{}-{}-{}-{}".format(rw.get_random_word(),rw.get_random_word(),rw.get_random_word(),rw.get_random_word(),rw.get_random_word())
 
     if args.archive_id != None:
-        result_folder_md5 = args.archive_id
+        result_folder_id = args.archive_id
 
     default_config["buffer"] = os.path.join(default_config["archive_folder"],
-                                            str(result_folder_md5))
+                                            str(result_folder_id))
 
     init()
     assert (os.path.exists(def_config()["buffer"]))
-    generate_archive_info(result_folder_md5, args.message)
+    generate_archive_info(result_folder_id, args.message)
 
     if args.archive_id == None:
         prepare_elf_buffer(args.elfs, def_config()["elf_suffix"])
