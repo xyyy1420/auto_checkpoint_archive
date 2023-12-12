@@ -106,6 +106,21 @@ def gen_env_script():
         for key in keys:
             print("export {}={}".format(key,env_dist.get(key)),file=f)
 
+def delete_archive(archive_id):
+    shutil.rmtree(def_config()["buffer"])
+    result=[]
+    with open(os.path.join(def_config()["archive_folder"],"archive_info"),"r") as f:
+        infos=f.readlines()
+        for info in infos:
+            if archive_id in info:
+                pass
+            else:
+                result.append(info)
+
+    with open(os.path.join(def_config()["archive_folder"],"archive_info"),"w") as f:
+        f.writelines(result)
+
+
 if __name__ == "__main__":
     gen_env_script()
 
@@ -154,6 +169,9 @@ if __name__ == "__main__":
     parser.add_argument('--build-bbl-only',
                         action='store_true',
                         help="Generate spec bbl only")
+    parser.add_argument('--delete',
+                        action='store_true',
+                        help="Delete archive")
 
     args = parser.parse_args()
 
