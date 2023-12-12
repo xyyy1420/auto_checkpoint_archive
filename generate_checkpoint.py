@@ -6,7 +6,7 @@ import subprocess
 import time
 from threading import Thread
 from multiprocessing import Pool
-from random_word import RandomWords
+import random
 from datetime import datetime
 from utils import generate_initramfs, generate_run_sh, mkdir, file_entrys, app_list
 from configs import build_config, get_default_spec_list, get_spec_elf_list, def_config, prepare_config, get_default_spec_list, default_config, get_checkpoint_results
@@ -189,20 +189,26 @@ if __name__ == "__main__":
     if args.archive_folder != None:
         default_config["archive_folder"] = args.archive_folder
 
-    # record user message
-    if args.message == None:
-        print("Warning: Without message might could not find profiling result")
-        args.message = "No message"
-
     # calculate result archive id
-    rw=RandomWords()
-    result_folder_id="{}-{}-{}-{}-{}".format(rw.get_random_word(),rw.get_random_word(),rw.get_random_word(),rw.get_random_word(),rw.get_random_word())
+    result_folder_id=""
+    with open("random_words","r") as f:
+        lines = f.read().splitlines()
+        result_folder_id="{}-{}-{}-{}".format(random.choice(lines),random.choice(lines),random.choice(lines),datetime.now().strftime("%Y-%m-%d-%H-%M"))
 
+    # set archive id from arg
     if args.archive_id != None:
         result_folder_id = args.archive_id
 
     default_config["buffer"] = os.path.join(default_config["archive_folder"],
                                             str(result_folder_id))
+    if args.delete:
+        delete_archive(str(result_folder_id))
+        exit(0)
+
+    # record user message
+    if args.message == None:
+        print("Warning: Without message might could not find profiling result")
+        args.message = "No message"
 
     init()
     assert (os.path.exists(def_config()["buffer"]))
