@@ -98,10 +98,11 @@ def generate_run_sh(specs, elf_suffix, dest_path, withTrap=False):
         if withTrap:
             lines.append("/spec_common/before_workload")
 
-        if spec.find("xalancbmk"):
-            lines.append(f"cd /spec && ./{spec_bin} {spec_cmd} > null")
+        if spec=="xalancbmk":
+            lines.append(f"cd /spec && ./{spec_bin} {spec_cmd} > xalan.out")
         else:
             lines.append(f"cd /spec && ./{spec_bin} {spec_cmd}")
+        lines.append("ls /spec")
 
         if withTrap:
             lines.append("/spec_common/trap")

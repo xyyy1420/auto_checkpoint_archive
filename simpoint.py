@@ -29,7 +29,7 @@ def profiling(workload, ptime):
                              stdout=out,
                              stderr=err)
 # if use normal "trap", check_returncode will return, else check_return will raise err, we use qemu_trap, so comment this for now
-#        res.check_returncode()
+        res.check_returncode()
 
 
 def cluster(workload, ptime, cltime):
@@ -57,13 +57,10 @@ def cluster(workload, ptime, cltime):
                              stdout=out,
                              stderr=err)
 
-#        res.check_returncode()
+        res.check_returncode()
 
 
 def checkpoint(workload, ptime, cltime, ctime):
-    pres_folder = os.path.join(
-        def_config()["buffer"],
-        simpoint_config()["profiling_folder"].format(ptime))
     cl_res_folder = os.path.join(
         def_config()["buffer"],
         simpoint_config()["cluster_folder"].format(ptime, cltime))
@@ -88,7 +85,7 @@ def checkpoint(workload, ptime, cltime, ctime):
                              stdout=out,
                              stderr=err)
 
-#        res.check_returncode()
+        res.check_returncode()
 
     result = {
         "cl_res":
