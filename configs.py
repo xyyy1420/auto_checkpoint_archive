@@ -62,7 +62,9 @@ def build_config():
         os.path.join(def_config()["buffer"],
                      def_config()["logs"], "build"),
         "bin_folder":
-        os.path.join(def_config()["buffer"], "bin")
+        os.path.join(def_config()["buffer"], "bin"),
+        "scripts_folder":
+        os.path.join(def_config()["buffer"], "scripts")
     }
 
 

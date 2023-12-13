@@ -1,6 +1,6 @@
 import os
 import pathlib
-from configs import default_initramfs_file, def_config, get_default_spec_list, prepare_config
+from configs import default_initramfs_file, def_config, get_default_spec_list, prepare_config, build_config
 from configs import get_spec_info
 
 
@@ -50,68 +50,74 @@ def traverse_path(path, stack=""):
     return (all_dirs, all_files)
 
 
-def generate_initramfs(specs, elf_suffix, dest_path):
+def generate_initramfs(spec, elf_suffix, dest_path):
     lines = default_initramfs_file.copy()
-    for spec in specs:
-        spec_files = get_spec_info(def_config()["cpu2006_run_dir"],
-                                   prepare_config()["elf_folder"],
-                                   elf_suffix)[spec][0]
-        for i, filename in enumerate(spec_files):
-            if len(filename.split()) == 1:
-                # print(f"default {filename} to file 755 0 0")
-                basename = filename.split("/")[-1]
-                filename = f"file /spec/{basename} {filename} 755 0 0"
-                lines.append(filename)
-            elif len(filename.split()) == 3:
-                node_type, name, path = filename.split()
-                if node_type != "dir":
-                    print(f"unknown filename: {filename}")
-                    continue
-                all_dirs, all_files = traverse_path(path)
-                lines.append(f"dir /spec/{name} 755 0 0")
-                for sub_dir in all_dirs:
-                    lines.append(f"dir /spec/{name}/{sub_dir} 755 0 0")
-                for file in all_files:
-                    lines.append(
-                        f"file /spec/{name}/{file} {path}/{file} 755 0 0")
-            else:
+    spec_files = get_spec_info(def_config()["cpu2006_run_dir"],
+                               prepare_config()["elf_folder"],
+                               elf_suffix)[spec][0]
+    for i, filename in enumerate(spec_files):
+        if len(filename.split()) == 1:
+            # print(f"default {filename} to file 755 0 0")
+            basename = filename.split("/")[-1]
+            filename = f"file /spec/{basename} {filename} 755 0 0"
+            lines.append(filename)
+        elif len(filename.split()) == 3:
+            node_type, name, path = filename.split()
+            if node_type != "dir":
                 print(f"unknown filename: {filename}")
+                continue
+            all_dirs, all_files = traverse_path(path)
+            lines.append(f"dir /spec/{name} 755 0 0")
+            for sub_dir in all_dirs:
+                lines.append(f"dir /spec/{name}/{sub_dir} 755 0 0")
+            for file in all_files:
+                lines.append(
+                    f"file /spec/{name}/{file} {path}/{file} 755 0 0")
+        else:
+            print(f"unknown filename: {filename}")
     with open(os.path.join(dest_path, "initramfs-spec.txt"), "w") as f:
+        f.writelines(map(lambda x: x + "\n", lines))
+    with open(os.path.join(build_config()["scripts_folder"], "{}_initramfs-spec.txt".format(spec)), "w") as f:
         f.writelines(map(lambda x: x + "\n", lines))
 
 
-def generate_run_sh(specs, elf_suffix, dest_path, withTrap=False):
+
+
+def generate_run_sh(spec, elf_suffix, dest_path, withTrap=False):
     lines = []
     lines.append("#!/bin/sh")
     lines.append("echo '===== Start running SPEC2006 ====='")
-    for spec in specs:
-        spec_bin = get_spec_info(def_config()["cpu2006_run_dir"],
-                                 prepare_config()["elf_folder"],
-                                 elf_suffix)[spec][0][0].split("/")[-1]
-        spec_cmd = " ".join(
-            get_spec_info(def_config()["cpu2006_run_dir"],
-                          prepare_config()["elf_folder"], elf_suffix)[spec][1])
-        lines.append(f"echo '======== BEGIN {spec} ========'")
-        lines.append("set -x")
-        lines.append(f"md5sum /spec/{spec_bin}")
-        lines.append("date -R")
-        if withTrap:
-            lines.append("/spec_common/before_workload")
+    spec_bin = get_spec_info(def_config()["cpu2006_run_dir"],
+                             prepare_config()["elf_folder"],
+                             elf_suffix)[spec][0][0].split("/")[-1]
+    spec_cmd = " ".join(
+        get_spec_info(def_config()["cpu2006_run_dir"],
+                      prepare_config()["elf_folder"], elf_suffix)[spec][1])
+    lines.append(f"echo '======== BEGIN {spec} ========'")
+    lines.append("set -x")
+    lines.append(f"md5sum /spec/{spec_bin}")
+    lines.append("date -R")
+    if withTrap:
+        lines.append("/spec_common/before_workload")
 
-        if spec=="xalancbmk":
-            lines.append(f"cd /spec && ./{spec_bin} {spec_cmd} > xalan.out")
-        else:
-            lines.append(f"cd /spec && ./{spec_bin} {spec_cmd}")
-        lines.append("ls /spec")
+    if spec=="xalancbmk":
+        lines.append(f"cd /spec && ./{spec_bin} {spec_cmd} > xalan.out")
+    else:
+        lines.append(f"cd /spec && ./{spec_bin} {spec_cmd}")
+    lines.append("ls /spec")
 
-        if withTrap:
-            lines.append("/spec_common/trap")
-        lines.append("date -R")
-        lines.append("set +x")
-        lines.append(f"echo '======== END   {spec} ========'")
+    if withTrap:
+        lines.append("/spec_common/trap")
+    lines.append("date -R")
+    lines.append("set +x")
+    lines.append(f"echo '======== END   {spec} ========'")
     lines.append("echo '===== Finish running SPEC2006 ====='")
     with open(os.path.join(dest_path, "run.sh"), "w") as f:
         f.writelines(map(lambda x: x + "\n", lines))
+    with open(os.path.join(build_config()["scripts_folder"], "{}_run.sh".format(spec)), "w") as f:
+        f.writelines(map(lambda x: x + "\n", lines))
+
+
 
 
 def app_list(list_path,app_list):
