@@ -1,7 +1,7 @@
 import os
 import subprocess
 from configs import def_config, simpoint_config
-from configs import profiling_command, cluster_command, checkpoint_command, append_checkpoint_result
+from configs import profiling_command, cluster_command, checkpoint_command, append_checkpoint_result, qemu_profiling_command, qemu_checkpoint_command
 from utils import mkdir
 import json
 import re
@@ -25,7 +25,12 @@ def profiling(workload, ptime):
 
     print("Profiling, workload: {}, times: {}, output path: {}, err path: {}".format(workload,ptime,profiling_out,profiling_err))
     with open(profiling_out, "w") as out, open(profiling_err, "w") as err:
-        res = subprocess.run(profiling_command(workload, pres_folder),
+        if def_config()["emulator"]=="NEMU":
+            command=profiling_command(workload, pres_folder)
+        else:
+            command=qemu_profiling_command(workload, pres_folder)
+        print(command)
+        res = subprocess.run(command,
                              stdout=out,
                              stderr=err)
 # if use normal "trap", check_returncode will return, else check_return will raise err, we use qemu_trap, so comment this for now
@@ -80,8 +85,15 @@ def checkpoint(workload, ptime, cltime, ctime):
     print("Checkpointing, workload: {}, using profiling result: {}, using cluster result: {}, checkpoint id: {}, output path: {}, err path: {}".format(workload,ptime,cltime,ctime,checkpoint_out,checkpoint_err))
 
     with open(checkpoint_out, "w") as out, open(checkpoint_err, "w") as err:
-        res = subprocess.run(checkpoint_command(workload, cl_res_folder,
-                                                cres_folder),
+        if def_config()["emulator"]=="NEMU":
+            command=checkpoint_command(workload, cl_res_folder,
+                                                cres_folder)
+        else:
+            command=qemu_checkpoint_command(workload, cl_res_folder,
+                                                cres_folder)
+
+        print(command)
+        res = subprocess.run(command,
                              stdout=out,
                              stderr=err)
 

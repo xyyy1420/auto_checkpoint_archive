@@ -1,6 +1,6 @@
 import os
 import pathlib
-from configs import default_initramfs_file, def_config, get_default_spec_list, prepare_config, build_config
+from configs import get_default_initramfs_file, def_config, get_default_spec_list, prepare_config, build_config
 from configs import get_spec_info
 
 
@@ -51,7 +51,7 @@ def traverse_path(path, stack=""):
 
 
 def generate_initramfs(spec, elf_suffix, dest_path):
-    lines = default_initramfs_file.copy()
+    lines = get_default_initramfs_file().copy()
     spec_files = get_spec_info(def_config()["cpu2006_run_dir"],
                                prepare_config()["elf_folder"],
                                elf_suffix)[spec][0]

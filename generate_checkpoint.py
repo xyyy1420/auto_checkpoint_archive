@@ -1,7 +1,6 @@
 import argparse
 import os
 import shutil
-import hashlib
 import subprocess
 import time
 from threading import Thread
@@ -13,13 +12,13 @@ from configs import build_config, get_default_spec_list, get_spec_elf_list, def_
 from simpoint import per_checkpoint_generate_worklist, per_checkpoint_generate_json, simpoint
 
 
-def generate_archive_info(md5, message):
+def generate_archive_info(message):
     with open(os.path.join(def_config()["archive_folder"], "archive_info"),
               "a") as f:
-        f.write(f"{md5}: {message}\n")
+        f.write("{}: {}\n".format(def_config()["archive_id"],message))
 
 
-def init():
+def create_folders():
     for value in build_config().values():
         mkdir(value)
     for value in prepare_config().values():
@@ -39,12 +38,12 @@ def gen_copy_list_item(src_name,
         return []
 
 
-def prepare_elf_buffer(source_elf_path, append_elf_suffix):
+def prepare_elf_buffer(source_elf_path):
     prepare_copy_list = []
     copy_threads = []
 
     for entry in file_entrys(source_elf_path):
-        item = gen_copy_list_item(entry.name, entry.path, append_elf_suffix)
+        item = gen_copy_list_item(entry.name, entry.path,def_config()["elf_suffix"])
         if item != []:
             prepare_copy_list.append(item)
             thread = Thread(target=shutil.copy, args=item)
@@ -55,7 +54,31 @@ def prepare_elf_buffer(source_elf_path, append_elf_suffix):
         thread.join()
 
 
-def build_spec_bbl(spec, bin_suffix):
+def build_bbl_as_gcpt_payload(spec):
+    with open(
+            os.path.join(build_config()["build_log"], f"build-{spec}-aspayload-out.log"),
+            "w") as out, open(
+                os.path.join(build_config()["build_log"],
+                             f"build-{spec}-aspayload-err.log"), "w") as err:
+
+        res = subprocess.run(["make", "clean"],
+                             cwd=os.path.join(def_config()["nemu_home"],"resource","gcpt_restore"),
+                             stdout=out,
+                             stderr=err)
+        res.check_returncode()
+
+        res = subprocess.run(["make", "GCPT_PAYLOAD_PATH={}".format(os.path.abspath(os.path.join(build_config()["bin_folder"], "{}{}".format(spec,def_config()["bin_suffix"]))))],
+                             cwd=os.path.join(def_config()["nemu_home"],"resource","gcpt_restore"),
+                             stdout=out,
+                             stderr=err)
+        res.check_returncode()
+
+    target_file = os.path.join(def_config()["nemu_home"], "resource", "gcpt_restore","build","gcpt.bin")
+    cp_dest = os.path.join(build_config()["gcpt_bin_folder"], "{}{}".format(spec,def_config()["gcpt_bin_suffix"]))
+    shutil.copy(target_file, cp_dest)
+
+
+def build_spec_bbl(spec):
 
     print(f"build {spec}-bbl-linux-spec...")
 
@@ -76,17 +99,17 @@ def build_spec_bbl(spec, bin_suffix):
         res.check_returncode()
 
     target_file = os.path.join(def_config()["pk"], "build", "bbl.bin")
-    cp_dest = os.path.join(build_config()["bin_folder"], f"{spec}{bin_suffix}")
+    cp_dest = os.path.join(build_config()["bin_folder"], "{}{}".format(spec,def_config()["bin_suffix"]))
     shutil.copy(target_file, cp_dest)
 
 
 def prepare_rootfs(spec, withTrap=True):
-    generate_initramfs([spec],
+    generate_initramfs(spec,
                        def_config()["elf_suffix"],
-                       def_config()["riscv-rootfs"])
-    generate_run_sh([spec],
+                       os.path.join(def_config()["riscv-rootfs"],"rootfsimg"))
+    generate_run_sh(spec,
                     def_config()["elf_suffix"],
-                    def_config()["riscv-rootfs"], withTrap)
+                    os.path.join(def_config()["riscv-rootfs"],"rootfsimg"), withTrap)
 
 
 def run_simpoint(spec_app):
@@ -106,7 +129,8 @@ def gen_env_script():
         for key in keys:
             print("export {}={}".format(key,env_dist.get(key)),file=f)
 
-def delete_archive(archive_id):
+def delete_archive():
+    (_,archive_id)=os.path.split(def_config()["buffer"])
     shutil.rmtree(def_config()["buffer"])
     result=[]
     with open(os.path.join(def_config()["archive_folder"],"archive_info"),"r") as f:
@@ -173,6 +197,10 @@ if __name__ == "__main__":
                         action='store_true',
                         help="Delete archive")
 
+    parser.add_argument('--emulator',
+                        help="Specify the emulator (default: NEMU), options: NEMU, QEMU")
+
+
     args = parser.parse_args()
 
     if args.print_spec_app_list:
@@ -208,19 +236,18 @@ if __name__ == "__main__":
         default_config["archive_folder"] = args.archive_folder
 
     # calculate result archive id
-    result_folder_id=""
     with open("random_words","r") as f:
         lines = f.read().splitlines()
-        result_folder_id="{}-{}-{}-{}".format(random.choice(lines),random.choice(lines),random.choice(lines),datetime.now().strftime("%Y-%m-%d-%H-%M"))
+        default_config["archive_id"]="{}-{}-{}-{}".format(random.choice(lines),random.choice(lines),random.choice(lines),datetime.now().strftime("%Y-%m-%d-%H-%M"))
 
     # set archive id from arg
     if args.archive_id != None:
-        result_folder_id = args.archive_id
+        default_config["archive_id"] = args.archive_id
 
-    default_config["buffer"] = os.path.join(default_config["archive_folder"],
-                                            str(result_folder_id))
+    default_config["buffer"] = os.path.join(def_config()["archive_folder"],
+                                            def_config()["archive_id"])
     if args.delete:
-        delete_archive(str(result_folder_id))
+        delete_archive()
         exit(0)
 
     # record user message
@@ -228,18 +255,29 @@ if __name__ == "__main__":
         print("Warning: Without message might could not find profiling result")
         args.message = "No message"
 
-    init()
+    if args.emulator != None:
+        if args.emulator=="NEMU":
+            default_config["emulator"]="NEMU"
+        else:
+            default_config["emulator"]="QEMU"
+
+
+    create_folders()
     assert (os.path.exists(def_config()["buffer"]))
-    generate_archive_info(result_folder_id, args.message)
+    generate_archive_info(args.message)
 
     if args.archive_id == None:
-        prepare_elf_buffer(args.elfs, def_config()["elf_suffix"])
+        prepare_elf_buffer(args.elfs)
 
     run_simpoint_args = []
     for spec in app_list(args.spec_app_list,args.spec_apps):
         if args.archive_id == None:
             prepare_rootfs(spec, args.spec_bbl_checkpoint_mode)
-            build_spec_bbl(spec, def_config()["bin_suffix"])
+            build_spec_bbl(spec)
+
+        if default_config["emulator"]=="QEMU":
+            build_bbl_as_gcpt_payload(spec)
+
         run_simpoint_args.append(spec)
 
     if args.build_bbl_only:

@@ -26,8 +26,10 @@ default_config = {
     "logs": "logs",
     "buffer": "test_buffer",
     "archive_folder": "archive",
+    "archive_id": "",
     "elf_suffix": "_base.riscv64-linux-gnu-gcc12.2.0",
     "bin_suffix": "-bbl-linux-spec.bin",
+    "gcpt_bin_suffix": "-gcpt-pk-linux-spec.bin",
     "cpu2006_run_dir":
     "/path/to/cpu2006_run_dir",
     "riscv-rootfs": "/path/to/rootfsimg",
@@ -38,7 +40,8 @@ default_config = {
     "checkpoint_times": 1,
     "profiling_id": 0,
     "cluster_id": 0,
-    "checkpoint_id": 0
+    "checkpoint_id": 0,
+    "emulator": "NEMU"
 }
 
 
@@ -64,7 +67,9 @@ def build_config():
         "bin_folder":
         os.path.join(def_config()["buffer"], "bin"),
         "scripts_folder":
-        os.path.join(def_config()["buffer"], "scripts")
+        os.path.join(def_config()["buffer"], "scripts"),
+        "gcpt_bin_folder":
+        os.path.join(def_config()["buffer"], "gcpt_bins"),
     }
 
 
@@ -80,6 +85,11 @@ default_simpoint_config = {
 #default_simpoint_config=
 def simpoint_config():
     return {
+        "qemu":
+        os.path.join(def_config()["qemu_home"], "build",
+                     "qemu-system-riscv64"),
+        "profiling_plugin":
+        os.path.join(def_config()["qemu_plugin"]),
         "nemu":
         os.path.join(def_config()["nemu_home"], "build",
                      "riscv64-nemu-interpreter"),
@@ -91,6 +101,8 @@ def simpoint_config():
                      "simpoint_repo", "bin", "simpoint"),
         "bbl_folder":
         os.path.join(build_config()["bin_folder"]),
+        "gcpt_bin_folder":
+        os.path.join(build_config()["gcpt_bin_folder"]),
         "profiling_folder":
         default_simpoint_config["profiling_format"],
         "cluster_folder":
@@ -131,6 +143,19 @@ def profiling_command(workload, profiling_folder):
     return command
 
 
+def qemu_profiling_command(workload, profiling_folder):
+    command = [
+        simpoint_config()["qemu"], "-bios",
+        "{}/{}{}".format(simpoint_config()["gcpt_bin_folder"], workload,
+                         def_config()["gcpt_bin_suffix"]), "-M", "nemu",
+        "-nographic", "-m", "8G", "-smp", "1", "-cpu", "rv64,v=true,vlen=128",
+        "-plugin", "{},workload={},intervals={},target={}".format(
+            simpoint_config()["profiling_plugin"], workload,
+            simpoint_config()["interval"], os.path.join(def_config()["buffer"],profiling_folder,workload))
+    ]
+    return command
+
+
 def cluster_command(workload, profiling_folder, cluster_folder):
     seedkm = random.randint(100000, 999999)
     seedproj = random.randint(100000, 999999)
@@ -140,7 +165,7 @@ def cluster_command(workload, profiling_folder, cluster_folder):
                      "simpoint_bbv.gz"), "-saveSimpoints",
         os.path.join(cluster_folder, "simpoints0"), "-saveSimpointWeights",
         os.path.join(cluster_folder, "weights0"), "-inputVectorsGzipped",
-        "-maxK", "30", "-numInitSeeds", "2", "-iters", "1000", "-seedkm",
+        "-maxK", "100", "-numInitSeeds", "2", "-iters", "1000", "-seedkm",
         f"{seedkm}", "-seedproj", f"{seedproj}"
     ]
     return command
@@ -159,37 +184,57 @@ def checkpoint_command(workload, cluster_folder, checkpoint_folder):
     return command
 
 
-default_initramfs_file = [
-    "dir /bin 755 0 0", "dir /etc 755 0 0", "dir /dev 755 0 0",
-    "dir /lib 755 0 0", "dir /proc 755 0 0", "dir /sbin 755 0 0",
-    "dir /sys 755 0 0", "dir /tmp 755 0 0", "dir /usr 755 0 0",
-    "dir /mnt 755 0 0", "dir /usr/bin 755 0 0", "dir /usr/lib 755 0 0",
-    "dir /usr/sbin 755 0 0", "dir /var 755 0 0", "dir /var/tmp 755 0 0",
-    "dir /root 755 0 0", "dir /var/log 755 0 0", "",
-    "nod /dev/console 644 0 0 c 5 1", "nod /dev/null 644 0 0 c 1 3", "",
-    "# libraries",
-    "file /lib/ld-linux-riscv64-lp64d.so.1 ${RISCV}/sysroot/lib/ld-linux-riscv64-lp64d.so.1 755 0 0",
-    "file /lib/libc.so.6 ${RISCV}/sysroot/lib/libc.so.6 755 0 0",
-    "file /lib/libresolv.so.2 ${RISCV}/sysroot/lib/libresolv.so.2 755 0 0",
-    "file /lib/libm.so.6 ${RISCV}/sysroot/lib/libm.so.6 755 0 0",
-    "file /lib/libdl.so.2 ${RISCV}/sysroot/lib/libdl.so.2 755 0 0",
-    "file /lib/libpthread.so.0 ${RISCV}/sysroot/lib/libpthread.so.0 755 0 0",
-    "", "# busybox",
-    "file /bin/busybox ${RISCV_ROOTFS_HOME}/rootfsimg/build/busybox 755 0 0",
-    "file /etc/inittab ${RISCV_ROOTFS_HOME}/rootfsimg/inittab-spec 755 0 0",
-    "slink /init /bin/busybox 755 0 0", "", "# SPEC common",
-    "dir /spec_common 755 0 0",
-    "file /spec_common/before_workload ${RISCV_ROOTFS_HOME}/rootfsimg/build/before_workload 755 0 0",
-    "file /spec_common/trap ${RISCV_ROOTFS_HOME}/rootfsimg/build/trap 755 0 0", "", "# SPEC",
-    "dir /spec 755 0 0",
-    "file /spec/run.sh ${RISCV_ROOTFS_HOME}/rootfsimg/run.sh 755 0 0"
-]
+def qemu_checkpoint_command(workload, cluster_folder, checkpoint_folder):
+    command = [
+        simpoint_config()["qemu"], "-bios",
+        "{}/{}{}".format(simpoint_config()["gcpt_bin_folder"], workload,
+                         def_config()["gcpt_bin_suffix"]), "-M", "nemu",
+        "-nographic", "-m", "8G", "-smp", "1", "-cpu", "rv64,v=true,vlen=128",
+        "-simpoint-path", cluster_folder, "-workload", workload,
+        "-cpt-interval",
+        simpoint_config()["interval"], "-output-base-dir",
+        def_config()["buffer"], "-config-name", checkpoint_folder,
+        "-checkpoint-mode", "SimpointCheckpoint"
+    ]
+    return command
+
+
+def get_default_initramfs_file():
+    return [
+        "dir /bin 755 0 0", "dir /etc 755 0 0", "dir /dev 755 0 0",
+        "dir /lib 755 0 0", "dir /proc 755 0 0", "dir /sbin 755 0 0",
+        "dir /sys 755 0 0", "dir /tmp 755 0 0", "dir /usr 755 0 0",
+        "dir /mnt 755 0 0", "dir /usr/bin 755 0 0", "dir /usr/lib 755 0 0",
+        "dir /usr/sbin 755 0 0", "dir /var 755 0 0", "dir /var/tmp 755 0 0",
+        "dir /root 755 0 0", "dir /var/log 755 0 0", "",
+        "nod /dev/console 644 0 0 c 5 1", "nod /dev/null 644 0 0 c 1 3", "",
+        "# libraries",
+        "file /lib/ld-linux-riscv64-lp64d.so.1 ${RISCV}/sysroot/lib/ld-linux-riscv64-lp64d.so.1 755 0 0",
+        "file /lib/libc.so.6 ${RISCV}/sysroot/lib/libc.so.6 755 0 0",
+        "file /lib/libresolv.so.2 ${RISCV}/sysroot/lib/libresolv.so.2 755 0 0",
+        "file /lib/libm.so.6 ${RISCV}/sysroot/lib/libm.so.6 755 0 0",
+        "file /lib/libdl.so.2 ${RISCV}/sysroot/lib/libdl.so.2 755 0 0",
+        "file /lib/libpthread.so.0 ${RISCV}/sysroot/lib/libpthread.so.0 755 0 0",
+        "", "# busybox",
+        "file /bin/busybox {}/rootfsimg/build/busybox 755 0 0".format(
+            def_config()["riscv-rootfs"]),
+        "file /etc/inittab {}/rootfsimg/inittab-spec 755 0 0".format(
+            def_config()["riscv-rootfs"]), "slink /init /bin/busybox 755 0 0",
+        "", "# SPEC common", "dir /spec_common 755 0 0",
+        "file /spec_common/before_workload {}/rootfsimg/build/before_workload 755 0 0"
+        .format(def_config()["riscv-rootfs"]),
+        "file /spec_common/trap {}/rootfsimg/build/qemu_trap 755 0 0".format(
+            def_config()["riscv-rootfs"]), "", "# SPEC", "dir /spec 755 0 0",
+        "file /spec/run.sh {}/rootfsimg/run.sh 755 0 0".format(
+            def_config()["riscv-rootfs"])
+    ]
+
 
 def get_spec_elf_list():
     return [
         "astar", "bwaves", "bzip2", "cactusADM", "calculix", "dealII",
-        "gamess", "GemsFDTD", "gobmk", "gromacs", "h264ref", "hmmer",
-        "lbm", "leslie3d", "libquantum", "mcf", "milc", "namd", "omnetpp",
+        "gamess", "GemsFDTD", "gobmk", "gromacs", "h264ref", "hmmer", "lbm",
+        "leslie3d", "libquantum", "mcf", "milc", "namd", "omnetpp",
         "perlbench", "povray", "sjeng", "soplex", "specrand", "sphinx3",
         "tonto", "wrf", "xalancbmk", "zeusmp", "gcc"
     ]
