@@ -11,7 +11,6 @@ from utils import generate_initramfs, generate_run_sh, mkdir, file_entrys, app_l
 from configs import build_config, get_default_spec_list, get_spec_elf_list, def_config, prepare_config, get_default_spec_list, default_config, get_checkpoint_results
 from simpoint import per_checkpoint_generate_worklist, per_checkpoint_generate_json, simpoint
 
-
 def generate_archive_info(message):
     with open(os.path.join(def_config()["archive_folder"], "archive_info"),
               "a") as f:
@@ -53,6 +52,12 @@ def prepare_elf_buffer(source_elf_path):
     for thread in copy_threads:
         thread.join()
 
+    for item in prepare_copy_list:
+        with open(os.path.join(os.path.join(build_config()["assembly_folder"],os.path.basename(item[1])+".s")),"w") as out:
+            res = subprocess.run(["riscv64-unknown-linux-gnu-objdump", "-d",item[1]],stdout=out)
+            res.check_returncode()
+
+
 
 def build_bbl_as_gcpt_payload(spec):
     with open(
@@ -73,9 +78,13 @@ def build_bbl_as_gcpt_payload(spec):
                              stderr=err)
         res.check_returncode()
 
-    target_file = os.path.join(def_config()["nemu_home"], "resource", "gcpt_restore","build","gcpt.bin")
-    cp_dest = os.path.join(build_config()["gcpt_bin_folder"], "{}{}".format(spec,def_config()["gcpt_bin_suffix"]))
-    shutil.copy(target_file, cp_dest)
+    gcpt_bin_src_path = os.path.join(def_config()["nemu_home"], "resource", "gcpt_restore","build","gcpt.bin")
+    gcpt_bin_dest_path = os.path.join(build_config()["gcpt_bin_folder"], "{}{}".format(spec,def_config()["gcpt_bin_suffix"]))
+    shutil.copy(gcpt_bin_src_path, gcpt_bin_dest_path)
+
+    gcpt_txt_src_path= os.path.join(def_config()["nemu_home"], "resource", "gcpt_restore","build","gcpt.txt")
+    gcpt_txt_dest_path = os.path.join(build_config()["assembly_folder"], "{}{}{}".format(spec,def_config()["gcpt_bin_suffix"],".gcpt.s"))
+    shutil.copy(gcpt_txt_src_path, gcpt_txt_dest_path)
 
 
 def build_spec_bbl(spec):
@@ -98,9 +107,19 @@ def build_spec_bbl(spec):
                              stderr=err)
         res.check_returncode()
 
-    target_file = os.path.join(def_config()["pk"], "build", "bbl.bin")
-    cp_dest = os.path.join(build_config()["bin_folder"], "{}{}".format(spec,def_config()["bin_suffix"]))
-    shutil.copy(target_file, cp_dest)
+    bbl_bin_src_path = os.path.join(def_config()["pk"], "build", "bbl.bin")
+    bbl_bin_dest_path = os.path.join(build_config()["bin_folder"], "{}{}".format(spec,def_config()["bin_suffix"]))
+    shutil.copy(bbl_bin_src_path, bbl_bin_dest_path)
+
+    bbl_txt_src_path = os.path.join(def_config()["pk"], "build", "bbl.txt")
+    bbl_txt_dest_path = os.path.join(build_config()["assembly_folder"], "{}{}{}".format(spec,def_config()["bin_suffix"],".pk.s"))
+    shutil.copy(bbl_txt_src_path, bbl_txt_dest_path)
+
+    kernel_txt_src_path = os.path.join(def_config()["pk"], "build", "vmlinux.txt")
+    kernel_txt_dest_path = os.path.join(build_config()["assembly_folder"], "{}{}{}".format(spec,def_config()["bin_suffix"],".vmlinux.s"))
+    shutil.copy(kernel_txt_src_path, kernel_txt_dest_path)
+
+
 
 
 def prepare_rootfs(spec, withTrap=True):

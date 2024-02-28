@@ -30,11 +30,12 @@ default_config = {
     "elf_suffix": "_base.riscv64-linux-gnu-gcc12.2.0",
     "bin_suffix": "-bbl-linux-spec.bin",
     "gcpt_bin_suffix": "-gcpt-pk-linux-spec.bin",
-    "cpu2006_run_dir":
-    "/path/to/cpu2006_run_dir",
-    "riscv-rootfs": "/path/to/rootfsimg",
-    "pk": "/path/to/riscv-pk",
-    "nemu_home": "/path/to/NEMU",
+    "cpu2006_run_dir": "",
+    "riscv-rootfs": "",
+    "pk": "",
+    "nemu_home": "",
+    "qemu_home": "",
+    "qemu_plugin": "",
     "profiling_times": 1,
     "cluster_times": 1,
     "checkpoint_times": 1,
@@ -70,6 +71,8 @@ def build_config():
         os.path.join(def_config()["buffer"], "scripts"),
         "gcpt_bin_folder":
         os.path.join(def_config()["buffer"], "gcpt_bins"),
+        "assembly_folder":
+        os.path.join(def_config()["buffer"], "assembly"),
     }
 
 
