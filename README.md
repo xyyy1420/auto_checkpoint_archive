@@ -1,4 +1,6 @@
 <a name="OH3kA"></a>
+# This repository has been moved to [auto_checkpoint](https://github.com/xyyy1420/auto_checkpoint/tree/auto_checkpoint)
+
 ## 环境准备
 - 请预先准备好riscv64工具链，可能用到的prefix有`riscv64-linux-gnu-` `riscv64-unknown-linux-gnu-` `riscv64-unknown-elf-`
 - 从香山项目中克隆下来 riscv-pk， riscv-linux， riscv-rootfs，NEMU分别是启动加载程序 Bootloader， Linux kernel ，根文件系统 rootfs和NEMU。请将四个仓库放到同一目录下
